@@ -1,0 +1,71 @@
+{
+  "folders": [
+    {
+      "name": "ModularTruckStation (mod)",
+      "path": "."
+    },
+    {
+      "name": "Unreal Engine 5.6",
+      "path": "D:/Projects/UE_5.6"
+    },
+    {
+      "name": "Satisfactory (game)",
+      "path": "D:/Games/SatisfactoryEarlyAccess"
+    }
+  ],
+  "settings": {
+    "files.eol": "\r\n",
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "editor.detectIndentation": false,
+    "[cpp]": { "editor.insertSpaces": false, "editor.tabSize": 4 },
+    "[c]": { "editor.insertSpaces": false, "editor.tabSize": 4 },
+    "[csharp]": { "editor.insertSpaces": false, "editor.tabSize": 4 },
+    "files.associations": {
+      "*.uplugin": "json",
+      "*.uproject": "json",
+      "*.ush": "hlsl",
+      "*.usf": "hlsl"
+    },
+    "files.watcherExclude": {
+      "**/Intermediate/**": true,
+      "**/Binaries/**": true,
+      "**/Saved/**": true,
+      "**/DerivedDataCache/**": true,
+      "**/Content/**": true,
+      "**/*.pak": true,
+      "**/*.utoc": true,
+      "**/*.ucas": true
+    },
+    "search.exclude": {
+      "**/Intermediate": true,
+      "**/Binaries": true,
+      "**/Saved": true,
+      "**/DerivedDataCache": true,
+      "**/Content": true,
+      "**/*.pak": true,
+      "**/*.utoc": true,
+      "**/*.ucas": true,
+      "**/ThirdParty": true
+    },
+    "search.followSymlinks": false,
+    "git.detectSubmodules": false,
+    "git.autoRepositoryDetection": "openEditors",
+    "C_Cpp.intelliSenseCacheSize": 10240,
+    "C_Cpp.files.exclude": {
+      "**/Intermediate/**": true,
+      "**/Binaries/**": true,
+      "**/Saved/**": true,
+      "**/DerivedDataCache/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.cpptools",
+      "ms-vscode.cpptools-extension-pack",
+      "ms-dotnettools.csharp",
+      "editorconfig.editorconfig",
+      "github.vscode-pull-request-github"
+    ]
+  }
+}

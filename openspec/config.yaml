@@ -1,0 +1,44 @@
+schema: spec-driven
+githubCopilot:
+  cloudAgent: false
+
+context: |
+  Satisfactory mod (Satisfactory Mod Loader / SML) built with Unreal Engine 5.6.1 (C++ and Blueprint), Windows only.
+  Engine install: D:/Projects/UE_5.6. Game install: D:/Games/SatisfactoryEarlyAccess.
+  Goal: a modular truck station. The vanilla truck station keeps its inventory and docking logic; snap-on modules add extra
+  belt input/output ports that feed or drain the station's cargo inventory (similar to freight platforms on a train station).
+  Vanilla station has 1 fuel input, 2 cargo inputs and 2 cargo outputs.
+  Do not modify or replace vanilla game classes or assets; extend them. Existing saves must keep loading.
+  Designs must address multiplayer replication and save/load of module links.
+  Binary assets (uasset/umap/textures/meshes) are stored in Git LFS.
+
+# Project context (optional)
+# Add only constraints that should guide OpenSpec artifacts and workflows.
+# Include constraints an agent cannot infer by reading the code.
+# Keep general project documentation and discoverable codebase facts out.
+# Example:
+#   context: |
+#     Designs and tasks must cover Windows, macOS, and Linux
+#     Write all artifacts in Spanish
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always state what is out of scope
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# Per-operation guidance (optional)
+# Add advisory guidance for how apply and archive work should be conducted.
+# This is separate from artifact rules above.
+# Example:
+#   operations:
+#     apply:
+#       guidance:
+#         - Keep test summaries concise
+#     archive:
+#       guidance:
+#         - Summarize the archive outcome before finishing

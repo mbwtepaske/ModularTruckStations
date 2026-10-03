@@ -1,0 +1,37 @@
+# Unreal build output
+Binaries/
+Intermediate/
+Saved/
+DerivedDataCache/
+
+# Packaged mod output
+*.smod
+Packaged/
+
+# IDE / tooling
+.vs/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+compile_commands.json
+.cache/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Node (openspec tooling, if installed locally)
+node_modules/
+
+# OpenSpec init leftovers
+.openspec-test-*
