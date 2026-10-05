@@ -1,8 +1,8 @@
 ## 1. Toolchain install
 
-- [ ] 1.1 Link GitHub account at linker.ficsit.app, download and install the CSS Unreal Engine (latest release); verify "Unreal Engine - CSS" launches and record its install path in README
-- [ ] 1.2 Install/modify Visual Studio 2022 with the workloads and components from design.md (incl. MSVC v14.38, .NET 8.0 Runtime, .NET Framework 4.8.1 SDK); verify they are listed as installed in Visual Studio Installer
-- [ ] 1.3 Install Wwise 2023.1.14.8770 (Authoring + SDK C++, Windows VS2022) via the Wwise launcher; verify it appears under installed versions in the launcher
+- [x] 1.1 Link GitHub account at linker.ficsit.app, download and install the CSS Unreal Engine (latest release); verify "Unreal Engine - CSS" launches and record its install path in README
+- [x] 1.2 Install/modify Visual Studio 2022 with the workloads and components from design.md (incl. MSVC v14.38, .NET 8.0 Runtime, .NET Framework 4.8.1 SDK); verify they are listed as installed in Visual Studio Installer
+- [x] 1.3 Install Wwise 2023.1.14.8770 (Authoring + SDK C++, Windows VS2022) via the Wwise launcher; verify it appears under installed versions in the launcher
 
 ## 2. Starter project
 

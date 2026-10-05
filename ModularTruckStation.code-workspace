@@ -5,12 +5,11 @@
       "path": "."
     },
     {
-      "name": "Unreal Engine 5.6",
-      "path": "D:/Projects/UE_5.6"
-    },
-    {
       "name": "Satisfactory (game)",
       "path": "D:/Games/SatisfactoryEarlyAccess"
+    },
+    {
+      "path": "../UnrealEngine-CSS"
     }
   ],
   "settings": {

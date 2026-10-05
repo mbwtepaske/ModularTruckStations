@@ -8,7 +8,7 @@ cargo inputs/outputs than the default 2 in / 2 out (plus 1 fuel input).
 | What | Path |
 |---|---|
 | Mod repo (this folder) | `D:\Projects\Games\Satisfactory\ModularTruckStation` |
-| Unreal Engine 5.6.1 | `D:\Projects\UE_5.6` |
+| Unreal Engine - CSS 5.6.1 (`5.6.1-CSS`) | `D:\Projects\Games\Satisfactory\UnrealEngine-CSS` |
 | Satisfactory | `D:\Games\SatisfactoryEarlyAccess` |
 
 Open `ModularTruckStation.code-workspace` in VS Code.
