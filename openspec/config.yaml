@@ -3,11 +3,16 @@ githubCopilot:
   cloudAgent: false
 
 context: |
-  Satisfactory mod (Satisfactory Mod Loader / SML) built with Unreal Engine 5.6.1 (C++ and Blueprint), Windows only.
-  Engine install: D:/Projects/UE_5.6. Game install: D:/Games/SatisfactoryEarlyAccess.
-  Goal: a modular truck station. The vanilla truck station keeps its inventory and docking logic; snap-on modules add extra
-  belt input/output ports that feed or drain the station's cargo inventory (similar to freight platforms on a train station).
-  Vanilla station has 1 fuel input, 2 cargo inputs and 2 cargo outputs.
+  Satisfactory mod (Satisfactory Mod Loader / SML 3.12.0) built with the Coffee Stain custom engine
+  "Unreal Engine - CSS" 5.6.1 (C++ and Blueprint), Windows only. The stock Epic engine cannot build SML mods.
+  Engine install: D:/Projects/Games/Satisfactory/UnrealEngine-CSS (build id 5.6.1-CSS).
+  Starter project (SatisfactoryModLoader, outside this repo): D:/Projects/Games/Satisfactory/SatisfactoryModLoader.
+  The mod plugin source lives in this repo at Mods/ModularTruckStation/ and is linked into the starter project's Mods/
+  folder with a directory junction; build and package (Alpakit) through the starter project.
+  Game install: D:/Games/SatisfactoryEarlyAccess.
+  Goal: a modular truck station. A standalone station base extends the vanilla truck docking station and accepts one
+  sized module that adds extra belt input/output ports feeding or draining the station's cargo inventory (similar to
+  freight platforms on a train station). Vanilla stations (1 fuel input, 2 cargo inputs, 2 cargo outputs) are untouched.
   Do not modify or replace vanilla game classes or assets; extend them. Existing saves must keep loading.
   Designs must address multiplayer replication and save/load of module links.
   Binary assets (uasset/umap/textures/meshes) are stored in Git LFS.

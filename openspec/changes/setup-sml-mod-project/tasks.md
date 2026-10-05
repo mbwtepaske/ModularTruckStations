@@ -6,7 +6,7 @@
 
 ## 2. Starter project
 
-- [ ] 2.1 Clone `SatisfactoryModLoader` to `D:/Projects/Games/Satisfactory/SatisfactoryModLoader` and check out the revision matching game CL 502094 / SML 3.12.0 (design D2); verify the checked-out SML version in `Mods/SML/SML.uplugin` and record the commit in README
+- [x] 2.1 Clone `SatisfactoryModLoader` to `D:/Projects/Games/Satisfactory/SatisfactoryModLoader` and check out the revision matching game CL 502094 / SML 3.12.0 (design D2); verify the checked-out SML version in `Mods/SML/SML.uplugin` and record the commit in README
 - [ ] 2.2 Integrate Wwise into `FactoryGame.uproject` (new Wwise project) and generate sound banks for all platforms; verify `GeneratedSoundBanks` exists in the Wwise project folder
 - [ ] 2.3 Generate Visual Studio project files with the CSS engine and build `FactoryGame` in `Development Editor | Win64`; verify the build succeeds without errors
 - [ ] 2.4 Open `FactoryGame.uproject` in the CSS editor, resolve first-launch prompts (sound bank path, audio routing), configure Alpakit dev packaging (Windows enabled, copy to `D:/Games/SatisfactoryEarlyAccess`); verify the Alpakit panel lists SML and the game path is saved
@@ -20,9 +20,9 @@
 
 ## 4. Repo tooling and docs
 
-- [ ] 4.1 Update `ModularTruckStation.code-workspace` folders (CSS engine, starter project, game) replacing stock UE 5.6; verify the workspace opens all folders
-- [ ] 4.2 Update README: environment table, toolchain versions, setup steps (link, install, clone, Wwise, build, junction, Alpakit), pinned starter project commit; verify a fresh read covers every step in this task list
-- [ ] 4.3 Update `openspec/config.yaml` context: CSS engine path, starter project path, and the station concept (standalone base extending the vanilla docking station with one sized module; vanilla stations untouched); verify `openspec context --json` runs without errors
+- [x] 4.1 Update `ModularTruckStation.code-workspace` folders (CSS engine, starter project, game) replacing stock UE 5.6; verify the workspace opens all folders
+- [x] 4.2 Update README: environment table, toolchain versions, setup steps (link, install, clone, Wwise, build, junction, Alpakit), pinned starter project commit; verify a fresh read covers every step in this task list
+- [x] 4.3 Update `openspec/config.yaml` context: CSS engine path, starter project path, and the station concept (standalone base extending the vanilla docking station with one sized module; vanilla stations untouched); verify `openspec context --json` runs without errors
 
 ## 5. End-to-end verification
 
