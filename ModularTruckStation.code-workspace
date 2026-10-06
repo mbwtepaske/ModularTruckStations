@@ -5,8 +5,12 @@
       "path": "."
     },
     {
-      "name": "Unreal Engine 5.6",
-      "path": "D:/Projects/UE_5.6"
+      "name": "SatisfactoryModLoader (starter project)",
+      "path": "D:/Projects/Games/Satisfactory/SatisfactoryModLoader"
+    },
+    {
+      "name": "Unreal Engine - CSS 5.6.1",
+      "path": "D:/Projects/Games/Satisfactory/UnrealEngine-CSS"
     },
     {
       "name": "Satisfactory (game)",
