@@ -29,11 +29,13 @@ D:/Projects/Games/Satisfactory/
     FactoryGame.uproject
     Mods/
       SML/
-      ModularTruckStation/  ==junction==>  ModularTruckStation repo/Mods/ModularTruckStation/
+      GameFeatures/
+        ModularTruckStation/  ==junction==>  ModularTruckStation repo/Mods/ModularTruckStation/
   ModularTruckStation/              this repo
     Mods/ModularTruckStation/       ModularTruckStation.uplugin, Source/, Content/, Config/
     openspec/ ...
 ```
+- The Alpakit "C++ & Blueprint" template creates a game feature plugin, and Unreal only loads game feature plugins from a path containing `/GameFeatures/`, so the junction sits in the starter project's `Mods/GameFeatures/`. The repo path stays `Mods/ModularTruckStation/`.
 - Alternative: commit the starter project into this repo. Rejected: very large, mostly third-party, changes with each SML release.
 - Alternative: make this repo the mod folder itself (clone into `Mods/`). Rejected: puts openspec, workspace and docs inside the plugin folder that Alpakit packages.
 - Junction (`mklink /J`) instead of symlink: works without admin or developer mode.

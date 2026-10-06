@@ -7,8 +7,8 @@ context: |
   "Unreal Engine - CSS" 5.6.1 (C++ and Blueprint), Windows only. The stock Epic engine cannot build SML mods.
   Engine install: D:/Projects/Games/Satisfactory/UnrealEngine-CSS (build id 5.6.1-CSS).
   Starter project (SatisfactoryModLoader, outside this repo): D:/Projects/Games/Satisfactory/SatisfactoryModLoader.
-  The mod plugin source lives in this repo at Mods/ModularTruckStation/ and is linked into the starter project's Mods/
-  folder with a directory junction; build and package (Alpakit) through the starter project.
+  The mod plugin (a game feature plugin) lives in this repo at Mods/ModularTruckStation/ and is linked into the starter
+  project's Mods/GameFeatures/ folder with a directory junction; build and package (Alpakit) through the starter project.
   Game install: D:/Games/SatisfactoryEarlyAccess.
   Goal: a modular truck station. A standalone station base extends the vanilla truck docking station and accepts one
   sized module that adds extra belt input/output ports feeding or draining the station's cargo inventory (similar to

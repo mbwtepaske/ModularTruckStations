@@ -53,18 +53,31 @@ Keep the engine and the starter project near the drive root and out of cloud-syn
    Check `Mods\SML\SML.uplugin` shows `"SemVersion": "3.12.0"`.
 6. **Wwise integration.** In the Wwise Launcher, Unreal Engine tab, use "Integrate Wwise in Project..." on
    `SatisfactoryModLoader\FactoryGame.uproject` (new Wwise project, version 2023.1.14.8770). Open the created Wwise
-   project in Wwise Authoring and generate sound banks for all platforms; `GeneratedSoundBanks` must exist in the Wwise
-   project folder.
+   project in Wwise Authoring, Project Settings > SoundBanks, and enable the metadata the Unreal integration needs:
+   "Generate JSON Metadata", "Generate Per Bank Metadata", "Object GUID", "Object Path", "Max Attenuation" and
+   "Estimated Duration". Then generate sound banks for all platforms (SoundBank Manager > Generate All, or with
+   Authoring closed: `WwiseConsole.exe generate-soundbank <path to .wproj>`). `GeneratedSoundBanks` must contain
+   `ProjectInfo.json`, and the editor log must show no `LogWwiseProjectDatabase` errors.
 7. **Build.** Right-click `FactoryGame.uproject` > "Generate Visual Studio project files", open `FactoryGame.sln` in
-   Visual Studio 2022 and build `FactoryGame` in `Development Editor | Win64`.
+   Visual Studio 2022 and build `FactoryGame` in `Development Editor | Win64`. Command line equivalent (the editor
+   target is `FactoryEditor`; the installed engine has no `GenerateProjectFiles.bat`):
+   ```
+   set E=D:\Projects\Games\Satisfactory\UnrealEngine-CSS\Engine
+   set P=D:\Projects\Games\Satisfactory\SatisfactoryModLoader\FactoryGame.uproject
+   "%E%\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe" -projectfiles -project="%P%" -game -rocket -progress
+   "%E%\Build\BatchFiles\Build.bat" FactoryEditor Win64 Development -Project="%P%" -WaitMutex
+   ```
 8. **Editor and Alpakit.** Open `FactoryGame.uproject` (Unreal Engine - CSS) and accept the first-launch prompts
-   (sound bank path, audio routing). In Alpakit (toolbar, "Alpakit Dev") enable Windows, enable copying to the game and
-   set the game path to `D:\Games\SatisfactoryEarlyAccess`.
-9. **Mod plugin junction.** With the editor closed, link the plugin from this repo into the starter project:
+   (sound bank path, audio routing). In Alpakit (toolbar, "Alpakit Dev") enable Windows, enable "Copy to Game Path"
+   with `D:\Games\SatisfactoryEarlyAccess`, and disable Windows Server and Linux Server (Linux Server needs the clang
+   cross-compile toolchain, which this setup does not install). The mod itself already exists in this repo; on a fresh
+   machine skip Alpakit's "Create Mod" and do step 9.
+9. **Mod plugin junction.** With the editor closed, link the plugin from this repo into the starter project. The mod is a
+   game feature plugin, so it must sit under `Mods\GameFeatures\`:
    ```
-   mklink /J D:\Projects\Games\Satisfactory\SatisfactoryModLoader\Mods\ModularTruckStation D:\Projects\Games\Satisfactory\ModularTruckStation\Mods\ModularTruckStation
+   mklink /J D:\Projects\Games\Satisfactory\SatisfactoryModLoader\Mods\GameFeatures\ModularTruckStation D:\Projects\Games\Satisfactory\ModularTruckStation\Mods\ModularTruckStation
    ```
-   (`cmd`; a junction needs no admin rights.) Regenerate project files and build again.
+   (`cmd`; a junction needs no admin rights.) Regenerate project files and build again (step 7).
 10. **Package and test.** In Alpakit Dev, package `ModularTruckStation`, start the game and check the mod is listed in
     the SML mods menu.
 

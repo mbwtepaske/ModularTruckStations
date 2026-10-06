@@ -7,16 +7,16 @@
 ## 2. Starter project
 
 - [x] 2.1 Clone `SatisfactoryModLoader` to `D:/Projects/Games/Satisfactory/SatisfactoryModLoader` and check out the revision matching game CL 502094 / SML 3.12.0 (design D2); verify the checked-out SML version in `Mods/SML/SML.uplugin` and record the commit in README
-- [ ] 2.2 Integrate Wwise into `FactoryGame.uproject` (new Wwise project) and generate sound banks for all platforms; verify `GeneratedSoundBanks` exists in the Wwise project folder
-- [ ] 2.3 Generate Visual Studio project files with the CSS engine and build `FactoryGame` in `Development Editor | Win64`; verify the build succeeds without errors
-- [ ] 2.4 Open `FactoryGame.uproject` in the CSS editor, resolve first-launch prompts (sound bank path, audio routing), configure Alpakit dev packaging (Windows enabled, copy to `D:/Games/SatisfactoryEarlyAccess`); verify the Alpakit panel lists SML and the game path is saved
+- [x] 2.2 Integrate Wwise into `FactoryGame.uproject` (new Wwise project) and generate sound banks for all platforms; verify `GeneratedSoundBanks` exists in the Wwise project folder
+- [x] 2.3 Generate Visual Studio project files with the CSS engine and build `FactoryGame` in `Development Editor | Win64`; verify the build succeeds without errors
+- [x] 2.4 Open `FactoryGame.uproject` in the CSS editor, resolve first-launch prompts (sound bank path, audio routing), configure Alpakit dev packaging (Windows enabled, copy to `D:/Games/SatisfactoryEarlyAccess`); verify the Alpakit panel lists SML and the game path is saved
 
 ## 3. Mod plugin in repo
 
-- [ ] 3.1 Create the `ModularTruckStation` mod with Alpakit's create-mod wizard (C++ template), set uplugin metadata (FriendlyName, Description, SML `^3.12.0`, GameVersion); verify the plugin compiles in the editor
-- [ ] 3.2 Move the plugin to `Mods/ModularTruckStation/` in this repo and replace it in the starter project with a junction (`mklink /J`); verify the editor still loads the plugin and edits in the repo show up in the editor
-- [ ] 3.3 Remove the blank `ModularTruckStation/` Unreal project from the repo after confirming it holds nothing beyond the generated empty module; verify `git status` no longer lists it
-- [ ] 3.4 Update `.gitignore` for plugin build output (`Mods/**/Binaries`, `Intermediate`, `Saved`) and confirm `.gitattributes` LFS rules cover plugin content; verify `git status` shows only source, config and uplugin files after a build
+- [x] 3.1 Create the `ModularTruckStation` mod with Alpakit's create-mod wizard (C++ template), set uplugin metadata (FriendlyName, Description, SML `^3.12.0`, GameVersion); verify the plugin compiles in the editor
+- [x] 3.2 Move the plugin to `Mods/ModularTruckStation/` in this repo and replace it in the starter project with a junction (`mklink /J`); verify the editor still loads the plugin and edits in the repo show up in the editor
+- [x] 3.3 Remove the blank `ModularTruckStation/` Unreal project from the repo after confirming it holds nothing beyond the generated empty module; verify `git status` no longer lists it
+- [x] 3.4 Update `.gitignore` for plugin build output (`Mods/**/Binaries`, `Intermediate`, `Saved`) and confirm `.gitattributes` LFS rules cover plugin content; verify `git status` shows only source, config and uplugin files after a build
 
 ## 4. Repo tooling and docs
 
@@ -26,4 +26,4 @@
 
 ## 5. End-to-end verification
 
-- [ ] 5.1 Package the empty mod with Alpakit to the game install and launch the game; verify `ModularTruckStation` is listed in the in-game SML mods menu and `FactoryGame.log` shows it loaded without errors
+- [x] 5.1 Package the empty mod with Alpakit to the game install and launch the game; verify `ModularTruckStation` is listed in the in-game SML mods menu and `FactoryGame.log` shows it loaded without errors
