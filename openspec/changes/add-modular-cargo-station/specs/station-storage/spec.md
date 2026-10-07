@@ -63,7 +63,7 @@ When a truck unloads, each item SHALL go only into the pool of its type while th
 - **THEN** both item types are loaded into the truck up to its free space
 
 ### Requirement: Filter change only when stock fits
-A column filter change SHALL be allowed only if, after recomputing pools, every pool's current stock still fits within its new size. Otherwise the change SHALL be rejected and the UI SHALL tell the player why. Stock SHALL never be destroyed by a filter change.
+A column filter change SHALL be allowed only if, after recomputing pools, every pool's current stock still fits within its new size. Stock fits when the number of inventory slots it needs, after merging partial stacks, is at most the pool's slot count. Otherwise the change SHALL be rejected and the UI SHALL tell the player why. Stock SHALL never be destroyed by a filter change.
 
 #### Scenario: Change allowed when shrunk pool still fits
 - **WHEN** columns 2 and 3 filter Iron Plate, the Iron Plate pool holds less than 1 unit of stock, and the player changes column 3 to Copper Sheet

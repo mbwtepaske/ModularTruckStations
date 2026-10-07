@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 
+MODULARTRUCKSTATION_API DECLARE_LOG_CATEGORY_EXTERN(LogModularTruckStation, Log, All);
+
 class FModularTruckStationModule : public IModuleInterface
 {
 public:

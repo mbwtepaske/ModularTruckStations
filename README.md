@@ -23,7 +23,7 @@ Open `ModularTruckStation.code-workspace` in VS Code.
 |---|---|
 | Game | `++FactoryGame+rel-main-anniversary-2026-CL-502094` |
 | SML | 3.12.0 |
-| Starter project | tag `v3.12.0`, commit `1a7d2ca3a4281cf589bd842a814fd7a55eac4a99`, local branch `mts-v3.12.0` |
+| Starter project | `master` commit `d2162c999b` ("Update headers to CL502094"), local branch `mts-cl502094` |
 | Engine | Unreal Engine - CSS `5.6.1-83++5.6.1-CSS` |
 | Visual Studio | 2022 (not 2026): ".NET desktop development", "Desktop development with C++", "Game development with C++", MSVC v143 v14.38-17.8, .NET 8.0 Runtime, .NET Framework 4.8.1 SDK |
 | Wwise | 2023.1.14.8770: Authoring, SDK (C++), Windows Visual Studio 2022 platform |
@@ -48,9 +48,12 @@ Keep the engine and the starter project near the drive root and out of cloud-syn
    cd D:\Projects\Games\Satisfactory
    git clone https://github.com/satisfactorymodding/SatisfactoryModLoader.git
    cd SatisfactoryModLoader
-   git checkout -b mts-v3.12.0 v3.12.0
+   git checkout -b mts-cl502094 d2162c999b
    ```
-   Check `Mods\SML\SML.uplugin` shows `"SemVersion": "3.12.0"`.
+   Check `Mods\SML\SML.uplugin` shows `"SemVersion": "3.12.0"`. The `v3.12.0` tag is not enough: its FactoryGame
+   headers predate game CL 502094, and a mod that subclasses game classes then fails to load with "Entry Point Not
+   Found" (e.g. `AFGBuildableFactory::OnBuildEffectActorFinished`). The starter project headers must match the
+   installed game build.
 6. **Wwise integration.** In the Wwise Launcher, Unreal Engine tab, use "Integrate Wwise in Project..." on
    `SatisfactoryModLoader\FactoryGame.uproject` (new Wwise project, version 2023.1.14.8770). Open the created Wwise
    project in Wwise Authoring, Project Settings > SoundBanks, and enable the metadata the Unreal integration needs:
