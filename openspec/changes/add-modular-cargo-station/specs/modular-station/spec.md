@@ -40,6 +40,21 @@ The base SHALL have exactly one fuel belt input port feeding exactly one fuel in
 - **WHEN** a belt carrying a valid vehicle fuel is connected to the base fuel port
 - **THEN** fuel fills the single fuel slot and docked trucks are refuelled from it
 
+### Requirement: Power consumption scales with module
+The base SHALL require power like the vanilla truck station. Its power consumption SHALL be a base amount plus a per-column amount for each column of the attached module (S = 1, M = 2, L = 3, XL = 4 columns), whether or not the column has a filter. Without a module the base SHALL consume only the base amount. Both amounts SHALL be tunable.
+
+#### Scenario: Bare base power
+- **WHEN** a base without a module is connected to power
+- **THEN** it consumes the base amount
+
+#### Scenario: XL module power
+- **WHEN** an XL module is attached to a powered base
+- **THEN** the base consumes the base amount plus 4 times the per-column amount
+
+#### Scenario: Power after module dismantle
+- **WHEN** the module is dismantled from a powered base
+- **THEN** the base's consumption returns to the base amount
+
 ### Requirement: Base without module stores no cargo
 A base without an attached module SHALL have zero cargo storage capacity. Trucks SHALL still be able to dock and refuel.
 
