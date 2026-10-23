@@ -8,13 +8,18 @@
 class AMTSStationBase;
 class UFGFactoryConnectionComponent;
 class UFGItemDescriptor;
+class UMaterialInstanceDynamic;
+class UMaterialInterface;
+class UTexture2D;
 
 /**
  * Storage module of a modular station: a matrix of columns x 2 slot ports. Each column has a storage type filter;
  * each slot holds one belt port that is an input or an output. The module has no storage of its own; its columns
  * define the pool layout of the base's storage, and its ports feed and drain the base's pools.
  *
- * Slot ports are the BP's factory connection components named "Port_<column>_<row>" (row 0 = bottom).
+ * Slot ports are the BP's factory connection components named "Port_<column>_<row>" (row 0 = bottom). Column
+ * displays are placed by static mesh components named "Display_<column>"; at runtime they are replaced by display
+ * meshes using mDisplayMaterial, whose texture parameter mDisplayIconParameter shows the filter's icon.
  */
 UCLASS(Abstract)
 class MODULARTRUCKSTATION_API AMTSStationModule : public AFGBuildableFactory
@@ -42,16 +47,35 @@ public:
 	virtual void Factory_CollectInput_Implementation() override;
 	// End AFGBuildableFactory interface
 
-	FORCEINLINE EMTSStationType GetStationType() const { return mStationType; }
-	FORCEINLINE int32 GetNumColumns() const { return mNumColumns; }
-	FORCEINLINE int32 GetNumSlots() const { return mNumColumns * NumRows; }
-	FORCEINLINE int32 GetSlotsPerColumn() const { return mSlotsPerColumn; }
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	EMTSStationType GetStationType() const { return mStationType; }
+
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	int32 GetNumColumns() const { return mNumColumns; }
+
+	/** Slot index = column * NumRows + row. */
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	int32 GetNumSlots() const { return mNumColumns * NumRows; }
+
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	int32 GetSlotsPerColumn() const { return mSlotsPerColumn; }
+
 	FORCEINLINE float GetPowerPerColumn() const { return mPowerPerColumn; }
 	FORCEINLINE const TArray<TSubclassOf<UFGItemDescriptor>>& GetColumnFilters() const { return mColumnFilters; }
-	FORCEINLINE AMTSStationBase* GetStationBase() const { return mStationBase; }
 
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	AMTSStationBase* GetStationBase() const { return mStationBase; }
+
+	/** @return the column's filter, or null if unset. */
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
 	TSubclassOf<UFGItemDescriptor> GetColumnFilter(int32 Column) const;
+
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
 	EMTSPortDirection GetPortDirection(int32 Slot) const;
+
+	/** @return true if a belt is connected to the slot's port; such a port cannot be toggled. */
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	bool IsSlotConnected(int32 Slot) const;
 
 	/** @return the slot's connection component, or null if the BP has no "Port_<column>_<row>" for it. */
 	UFGFactoryConnectionComponent* GetSlotConnection(int32 Slot) const;
@@ -65,11 +89,31 @@ public:
 	 */
 	EMTSFilterChangeResult SetColumnFilter(int32 Column, TSubclassOf<UFGItemDescriptor> ItemClass, TSubclassOf<UFGItemDescriptor>* OutFailedItem = nullptr);
 
+	/**
+	 * Server only. Sets every column to the same filter (null = unset) in one layout check, so the change applies
+	 * entirely or not at all.
+	 */
+	EMTSFilterChangeResult SetAllColumnFilters(TSubclassOf<UFGItemDescriptor> ItemClass, TSubclassOf<UFGItemDescriptor>* OutFailedItem = nullptr);
+
+	/** @return true if all columns have the same filter (or none); the UI then opens in simple mode. */
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	bool HasUniformColumnFilters() const;
+
 	/** Server only. Switches a slot port between input and output, if no belt is connected to it. */
 	EMTSPortToggleResult TogglePortDirection(int32 Slot);
 
+	/**
+	 * Server only. Sets a slot port's direction, if no belt is connected to it. Setting the current direction is
+	 * applied without change, also while a belt is connected.
+	 */
+	EMTSPortToggleResult SetPortDirection(int32 Slot, EMTSPortDirection Direction);
+
+	/** @return true if the item type can be a column filter of this module type. */
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	virtual bool CanFilterItem(TSubclassOf<UFGItemDescriptor> ItemClass) const;
+
 protected:
-	/** Called on server and clients when column filters change; the BP updates the column displays (task 4.5). */
+	/** Called on server and clients when column filters change, after the column displays are updated. */
 	UFUNCTION(BlueprintImplementableEvent, Category = "Modular Station")
 	void OnColumnFiltersChanged();
 
@@ -114,7 +158,35 @@ protected:
 	UPROPERTY(SaveGame)
 	int32 mSaveVersion = 1;
 
+	/** Material of the column displays, set on each "Display_<column>" component at runtime. */
+	UPROPERTY(EditDefaultsOnly, Category = "Modular Station|Display")
+	TObjectPtr<UMaterialInterface> mDisplayMaterial;
+
+	/** Texture parameter of the column display material that receives the filter's icon. */
+	UPROPERTY(EditDefaultsOnly, Category = "Modular Station|Display")
+	FName mDisplayIconParameter = TEXT("Icon");
+
+	/** Icon shown on the display of a column without filter. */
+	UPROPERTY(EditDefaultsOnly, Category = "Modular Station|Display")
+	TObjectPtr<UTexture2D> mUnsetDisplayIcon;
+
 private:
+	/**
+	 * Hides each "Display_<column>" placeholder of the BP and creates a display mesh in its place, with a dynamic
+	 * material from mDisplayMaterial.
+	 */
+	void CreateDisplayMaterials();
+
+	/** Shows each column filter's icon (or the unset icon) on its display. */
+	void UpdateColumnDisplays();
+
+	/** Dynamic display material per column; null where the BP has no display. */
+	UPROPERTY(Transient)
+	TArray<TObjectPtr<UMaterialInstanceDynamic>> mDisplayMaterials;
+
+	/** Applies new filters if the base's stock fits the resulting pools. */
+	EMTSFilterChangeResult ApplyColumnFilters(TArray<TSubclassOf<UFGItemDescriptor>> NewFilters, TSubclassOf<UFGItemDescriptor>* OutFailedItem);
+
 	/** Finds the "Port_<column>_<row>" connection components. */
 	void GatherSlotConnections();
 

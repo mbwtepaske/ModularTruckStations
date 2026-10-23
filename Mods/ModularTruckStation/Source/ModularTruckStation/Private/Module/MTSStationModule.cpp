@@ -1,6 +1,10 @@
 #include "Module/MTSStationModule.h"
 
+#include "Components/StaticMeshComponent.h"
+#include "Engine/Texture2D.h"
 #include "FGFactoryConnectionComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "ModularTruckStation.h"
 #include "Net/UnrealNetwork.h"
 #include "Resources/FGAnyUndefinedDescriptor.h"
@@ -45,6 +49,8 @@ void AMTSStationModule::BeginPlay()
 	{
 		mStationBase->AttachModule(this);
 	}
+	CreateDisplayMaterials();
+	UpdateColumnDisplays();
 	OnColumnFiltersChanged();
 	OnPortDirectionsChanged();
 }
@@ -137,6 +143,12 @@ EMTSPortDirection AMTSStationModule::GetPortDirection(int32 Slot) const
 	return mPortDirections.IsValidIndex(Slot) ? mPortDirections[Slot] : EMTSPortDirection::Input;
 }
 
+bool AMTSStationModule::IsSlotConnected(int32 Slot) const
+{
+	const UFGFactoryConnectionComponent* Connection = GetSlotConnection(Slot);
+	return Connection && Connection->IsConnected();
+}
+
 UFGFactoryConnectionComponent* AMTSStationModule::GetSlotConnection(int32 Slot) const
 {
 	return mSlotConnections.IsValidIndex(Slot) ? mSlotConnections[Slot] : nullptr;
@@ -153,13 +165,39 @@ EMTSFilterChangeResult AMTSStationModule::SetColumnFilter(int32 Column, TSubclas
 	{
 		return EMTSFilterChangeResult::InvalidColumn;
 	}
-	if (!mStationBase)
+	if (ItemClass && !CanFilterItem(ItemClass))
 	{
-		return EMTSFilterChangeResult::NoStationBase;
+		return EMTSFilterChangeResult::InvalidItem;
 	}
 
 	TArray<TSubclassOf<UFGItemDescriptor>> NewFilters = mColumnFilters;
 	NewFilters[Column] = ItemClass;
+	return ApplyColumnFilters(MoveTemp(NewFilters), OutFailedItem);
+}
+
+EMTSFilterChangeResult AMTSStationModule::SetAllColumnFilters(TSubclassOf<UFGItemDescriptor> ItemClass, TSubclassOf<UFGItemDescriptor>* OutFailedItem)
+{
+	if (ItemClass && !CanFilterItem(ItemClass))
+	{
+		return EMTSFilterChangeResult::InvalidItem;
+	}
+
+	TArray<TSubclassOf<UFGItemDescriptor>> NewFilters;
+	NewFilters.Init(ItemClass, mNumColumns);
+	return ApplyColumnFilters(MoveTemp(NewFilters), OutFailedItem);
+}
+
+bool AMTSStationModule::HasUniformColumnFilters() const
+{
+	return !mColumnFilters.ContainsByPredicate([this](const TSubclassOf<UFGItemDescriptor>& Filter) { return Filter != mColumnFilters[0]; });
+}
+
+EMTSFilterChangeResult AMTSStationModule::ApplyColumnFilters(TArray<TSubclassOf<UFGItemDescriptor>> NewFilters, TSubclassOf<UFGItemDescriptor>* OutFailedItem)
+{
+	if (!mStationBase)
+	{
+		return EMTSFilterChangeResult::NoStationBase;
+	}
 
 	// The base checks the fit and only rearranges the stock when it fits.
 	switch (mStationBase->ApplyLayout(FMTSPoolLayout::Build(NewFilters, mSlotsPerColumn), OutFailedItem))
@@ -183,20 +221,103 @@ EMTSPortToggleResult AMTSStationModule::TogglePortDirection(int32 Slot)
 	{
 		return EMTSPortToggleResult::InvalidSlot;
 	}
-	const UFGFactoryConnectionComponent* Connection = GetSlotConnection(Slot);
-	if (Connection && Connection->IsConnected())
+	return SetPortDirection(Slot, mPortDirections[Slot] == EMTSPortDirection::Input ? EMTSPortDirection::Output : EMTSPortDirection::Input);
+}
+
+EMTSPortToggleResult AMTSStationModule::SetPortDirection(int32 Slot, EMTSPortDirection Direction)
+{
+	if (!mPortDirections.IsValidIndex(Slot))
+	{
+		return EMTSPortToggleResult::InvalidSlot;
+	}
+	if (mPortDirections[Slot] == Direction)
+	{
+		return EMTSPortToggleResult::Applied;
+	}
+	if (IsSlotConnected(Slot))
 	{
 		return EMTSPortToggleResult::BeltConnected;
 	}
 
-	mPortDirections[Slot] = mPortDirections[Slot] == EMTSPortDirection::Input ? EMTSPortDirection::Output : EMTSPortDirection::Input;
+	mPortDirections[Slot] = Direction;
 	OnRep_PortDirections();
 	return EMTSPortToggleResult::Applied;
 }
 
+bool AMTSStationModule::CanFilterItem(TSubclassOf<UFGItemDescriptor> ItemClass) const
+{
+	return ItemClass != nullptr;
+}
+
 void AMTSStationModule::OnRep_ColumnFilters()
 {
+	UpdateColumnDisplays();
 	OnColumnFiltersChanged();
+}
+
+void AMTSStationModule::CreateDisplayMaterials()
+{
+	mDisplayMaterials.Reset();
+	mDisplayMaterials.SetNum(mNumColumns);
+	if (GetNetMode() == NM_DedicatedServer)
+	{
+		return;
+	}
+
+	if (!mDisplayMaterial)
+	{
+		UE_LOG(LogModularTruckStation, Warning, TEXT("%s: no display material configured"), *GetClass()->GetName());
+		return;
+	}
+
+	TArray<UStaticMeshComponent*> Meshes;
+	GetComponents<UStaticMeshComponent>(Meshes);
+	for (int32 Column = 0; Column < mNumColumns; ++Column)
+	{
+		const FString PlaceholderName = FString::Printf(TEXT("Display_%d"), Column);
+		UStaticMeshComponent* const* Placeholder = Meshes.FindByPredicate([&PlaceholderName](const UStaticMeshComponent* Mesh) { return Mesh->GetName() == PlaceholderName; });
+		if (!Placeholder)
+		{
+			UE_LOG(LogModularTruckStation, Warning, TEXT("%s: no display component %s"), *GetClass()->GetName(), *PlaceholderName);
+			continue;
+		}
+
+		// The game takes over the rendering of a building BP's mesh components, so the BP display only marks the
+		// place: it is hidden and replaced by a display created here, whose material stays under our control.
+		UStaticMeshComponent* Display = NewObject<UStaticMeshComponent>(this, *FString::Printf(TEXT("MTSDisplay_%d"), Column));
+		Display->SetStaticMesh((*Placeholder)->GetStaticMesh());
+		Display->SetupAttachment((*Placeholder)->GetAttachParent());
+		Display->SetRelativeTransform((*Placeholder)->GetRelativeTransform());
+		// Slightly larger, so it covers the placeholder in case the game keeps drawing that one.
+		Display->SetRelativeScale3D((*Placeholder)->GetRelativeScale3D() * 1.02);
+		Display->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		Display->SetCanEverAffectNavigation(false);
+		AddInstanceComponent(Display);
+		Display->RegisterComponent();
+		(*Placeholder)->SetVisibility(false);
+
+		mDisplayMaterials[Column] = Display->CreateDynamicMaterialInstance(0, mDisplayMaterial);
+		UE_LOG(LogModularTruckStation, Log, TEXT("%s: display %d created over %s (placeholder material %s)"), *GetName(), Column, *PlaceholderName, *GetNameSafe((*Placeholder)->GetMaterial(0)));
+	}
+}
+
+void AMTSStationModule::UpdateColumnDisplays()
+{
+	for (int32 Column = 0; Column < mDisplayMaterials.Num(); ++Column)
+	{
+		if (UMaterialInstanceDynamic* Material = mDisplayMaterials[Column])
+		{
+			const TSubclassOf<UFGItemDescriptor> Filter = GetColumnFilter(Column);
+			UTexture2D* Icon = Filter ? UFGItemDescriptor::GetBigIcon(Filter) : mUnsetDisplayIcon.Get();
+			if (Icon)
+			{
+				// Stream in the full resolution right away instead of showing the low mips first.
+				Icon->SetForceMipLevelsToBeResident(5.f);
+			}
+			Material->SetTextureParameterValue(mDisplayIconParameter, Icon);
+			UE_LOG(LogModularTruckStation, Verbose, TEXT("%s: display %d icon %s"), *GetName(), Column, *GetNameSafe(Icon));
+		}
+	}
 }
 
 void AMTSStationModule::OnRep_PortDirections()

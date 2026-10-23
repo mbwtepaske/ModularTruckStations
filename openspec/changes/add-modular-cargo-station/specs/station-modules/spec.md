@@ -44,6 +44,21 @@ Each module column SHALL have a storage type filter that is either unset or one 
 - **WHEN** a player sets column 1 of a new module to Iron Plate
 - **THEN** column 1's filter is Iron Plate and its storage becomes active
 
+### Requirement: Simple and advanced filter editing
+The module UI SHALL offer a simple and an advanced mode for column filters. Both modes SHALL pick items from a searchable list of the items the module can store, plus a "none" entry. In simple mode the chosen item SHALL be applied to all columns in one change, entirely or not at all. In advanced mode each column's filter SHALL be chosen separately. Both modes SHALL follow the storage rules for filter changes. The UI SHALL open in simple mode; the player switches to advanced mode to edit columns separately. When the columns have different filters, simple mode SHALL show no current item and state that picking an item sets all columns.
+
+#### Scenario: Simple mode sets all columns
+- **WHEN** a player picks Iron Plate in simple mode on an M module
+- **THEN** both columns filter Iron Plate
+
+#### Scenario: Simple mode is all or nothing
+- **WHEN** an M module's columns filter Iron Plate and Copper Sheet, the station holds Copper Sheet, and the player picks Iron Plate in simple mode
+- **THEN** the change is rejected and both filters stay unchanged
+
+#### Scenario: Mixed filters are flagged in simple mode
+- **WHEN** a player opens the UI of a module whose columns have different filters
+- **THEN** the UI is in simple mode, shows no current item and a note that picking an item sets all columns, and advanced mode shows each column's filter
+
 ### Requirement: Column filter display
 Each module column SHALL have a display on top that shows the icon of the column's filter item, or an "unset" indicator when no filter is set. Displays SHALL update for all players when the filter changes.
 

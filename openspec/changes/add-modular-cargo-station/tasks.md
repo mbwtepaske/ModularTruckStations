@@ -22,7 +22,7 @@
 - [x] 4.2 Map connection components to (column, row) and apply port directions in `BeginPlay`, after load and in `OnRep`; verify a toggled output port still feeds its belt after save/load
 - [x] 4.3 Implement input flow in `Factory_CollectInput` (grab only the column type, only when the pool has space) and output flow in `Factory_PeekOutput` / `Factory_GrabOutput` from the column's pool; verify in game: matching input fills pool, mismatched item backs up the belt, an input port in an unset column takes nothing, two columns with same filter share one pool for output
 - [x] 4.4 Implement module dismantle: storage refund via `GetDismantleInventoryReturns`, detach in `Dismantle_Implementation`; verify module-only dismantle refunds module cost + all stock and the base remains with zero storage, and base dismantle with module refunds everything exactly once
-- [ ] 4.5 Implement column displays (dynamic material with `GetBigIcon` or unset texture, updated on server and in `OnRep`); verify the icon updates when a filter changes
+- [x] 4.5 Implement column displays (dynamic material with `GetBigIcon` or unset texture, updated on server and in `OnRep`); verify the icon updates when a filter changes
 - [x] 4.6 Implement power scaling (base override of `GetProducingPowerConsumptionBase`, `mPowerPerColumn` on the module); verify in game: bare base 20 MW, XL module 40 MW, back to 20 MW after module dismantle
 
 ## 5. Placement
@@ -32,8 +32,8 @@
 
 ## 6. UI and multiplayer actions
 
-- [ ] 6.1 Implement `UMTSRemoteCallObject` (subclass of `UFGRemoteCallObject`) with `Server_SetColumnFilter` and `Server_TogglePort` (server validation, reason codes); create the root game instance module BP (`bRootModule`) and add the RCO to its `RemoteCallObjects`; verify in single player that a filter change and a free-port toggle go through the RCO and apply
-- [ ] 6.2 Create the module interact widget (per-column filter picker, per-slot direction toggle, rejection messages); verify the toggle is refused with a message while a belt is connected and the filter change is refused when stock would not fit
+- [ ] 6.1 Implement `UMTSRemoteCallObject` (subclass of `UFGRemoteCallObject`) with `Server_SetColumnFilter`, `Server_SetAllColumnFilters` and `Server_TogglePort` (server validation, reason codes); create the root game instance module BP (`bRootModule`) and add the RCO to its `RemoteCallObjects`; verify in single player that a filter change and a free-port toggle go through the RCO and apply
+- [ ] 6.2 Create the module interact widget: simple/advanced mode switch (window tabs), searchable item picker (mod widget; the vanilla splitter picker does not work on its own), per-column filters in advanced mode, per-slot direction toggle, rejection messages; verify simple mode sets all columns at once and is rejected as a whole when stock would not fit, the UI opens in simple mode and flags mixed filters there, the toggle is refused with a message while a belt is connected, and a column filter change is refused when stock would not fit
 - [x] 6.3 Hook up the base UI per the decision in 1.3 (vanilla widget or mod widget with mode toggle, fuel slot, storage view); verify mode changes affect truck transfer direction
 
 ## 7. Unlock and integration

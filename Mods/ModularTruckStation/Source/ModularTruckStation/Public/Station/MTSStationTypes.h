@@ -25,7 +25,11 @@ enum class EMTSFilterChangeResult : uint8
 {
 	Applied,
 	InvalidColumn,
+	/** The item cannot be stored by this station type, e.g. a fluid in a cargo module. */
+	InvalidItem,
 	NoStationBase,
+	/** The requesting player is not near the module. */
+	NotInReach,
 	/** The stock of a type that keeps its pool would not fit the smaller pool. */
 	PoolTooSmall,
 	/** A type with stock would lose its last column. */
@@ -39,5 +43,7 @@ enum class EMTSPortToggleResult : uint8
 	Applied,
 	InvalidSlot,
 	/** Ports can only be toggled while no belt is connected. */
-	BeltConnected
+	BeltConnected,
+	/** The requesting player is not near the module. */
+	NotInReach
 };

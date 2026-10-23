@@ -11,4 +11,7 @@ class MODULARTRUCKSTATION_API AMTSCargoModule : public AMTSStationModule
 	GENERATED_BODY()
 public:
 	AMTSCargoModule();
+
+	/** Only solid items; fluids and gases belong to the fluid station. */
+	virtual bool CanFilterItem(TSubclassOf<UFGItemDescriptor> ItemClass) const override;
 };
