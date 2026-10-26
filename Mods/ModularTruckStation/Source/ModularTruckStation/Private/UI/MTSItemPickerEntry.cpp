@@ -19,13 +19,16 @@ void UMTSItemPickerEntry::SetItem(UMTSItemPicker* Picker, TSubclassOf<UFGItemDes
 {
 	mPicker = Picker;
 	mItem = Item;
+	// A null item is the picker's "No filter" row.
 	if (EntryName)
 	{
-		EntryName->SetText(Item ? UFGItemDescriptor::GetItemName(Item) : FText::GetEmpty());
+		EntryName->SetText(Item ? UFGItemDescriptor::GetItemName(Item) : Picker ? Picker->GetNoFilterText() : FText::GetEmpty());
 	}
 	if (EntryIcon)
 	{
-		EntryIcon->SetBrushFromTexture(Item ? UFGItemDescriptor::GetSmallIcon(Item) : nullptr);
+		UTexture2D* Icon = Item ? UFGItemDescriptor::GetSmallIcon(Item) : Picker ? Picker->GetUnsetIcon() : nullptr;
+		EntryIcon->SetBrushFromTexture(Icon);
+		EntryIcon->SetVisibility(Icon ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Hidden);
 	}
 }
 

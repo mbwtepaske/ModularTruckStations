@@ -9,7 +9,7 @@ Depends on `setup-sml-mod-project` (complete, archived 2026-10-06), which provid
 - Add a **Modular Cargo Station base** building: extends the vanilla docking station behavior (truck docking, crane load/unload cycle, station-wide load/unload mode, single fuel slot fed by one fuel belt port, power consumption that grows with module size). A base without a module stores no cargo.
 - Add four **cargo modules**: S (1x2), M (2x2), L (3x2), XL (4x2) slots (columns x rows). A module snaps onto a base; a base accepts at most one module, only of the matching station type (cargo). No chaining.
 - Each module slot holds a belt port that the player toggles between input and output. Toggling is only allowed while no belt is attached to that port.
-- Each module column has a player-set **storage type filter** and a display on top of the column that shows the filter's item icon. A column without a filter is inactive.
+- Each module column has a player-set **storage type filter** and a display on top of the column that shows the filter's item icon. A column without a filter is inactive. Neighbouring columns can be **linked** so they always share one filter; a new module starts fully linked.
 - **Typed, pooled capacity**: each column contributes one tunable capacity unit. Columns with the same filter share one pool for that item type. The pool is reserved for that type only.
 - Filter changes are allowed only when the affected pool's stock still fits after the change.
 - Trucks unloading at the station deposit only items that have a matching pool with free space; the rest stays in the truck. Loading draws from all pools.
@@ -36,4 +36,4 @@ Note: this deviates from the original project idea of snapping modules onto the 
 - **New content**: base and four module buildables, descriptors, recipes, schematic, interact widgets, port and display meshes/materials (Git LFS).
 - **Vanilla dependencies (not modified)**: `AFGBuildableDockingStation`, `UFGInventoryComponent`, `UFGFactoryConnectionComponent`, `AFGDockingStationHologram`, `AFGFactoryHologram`, vanilla truck station meshes and crane animation (referenced, not changed).
 - **Saves**: only new classes are introduced; existing saves without the mod's buildables are unaffected.
-- **Multiplayer**: module link, filters and port directions replicate; client UI actions go through a server-validated remote call object.
+- **Multiplayer**: module link, filters, column links and port directions replicate; client UI actions go through a server-validated remote call object.

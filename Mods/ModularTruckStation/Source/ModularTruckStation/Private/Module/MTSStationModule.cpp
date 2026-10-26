@@ -6,6 +6,7 @@
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "ModularTruckStation.h"
+#include "Module/MTSColumnLinks.h"
 #include "Net/UnrealNetwork.h"
 #include "Resources/FGAnyUndefinedDescriptor.h"
 #include "Resources/FGItemDescriptor.h"
@@ -29,14 +30,30 @@ void AMTSStationModule::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Ou
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMTSStationModule, mColumnFilters);
+	DOREPLIFETIME(AMTSStationModule, mColumnLinks);
 	DOREPLIFETIME(AMTSStationModule, mPortDirections);
 	DOREPLIFETIME(AMTSStationModule, mStationBase);
 }
 
 void AMTSStationModule::BeginPlay()
 {
-	// New modules start with unset filters and input ports; loaded ones keep their saved settings.
+	// New modules start with unset filters, all columns linked and input ports; loaded ones keep their saved settings.
 	mColumnFilters.SetNum(mNumColumns);
+	const int32 NumSavedLinks = mColumnLinks.Num();
+	mColumnLinks.SetNum(FMath::Max(mNumColumns - 1, 0));
+	for (int32 Gap = NumSavedLinks; Gap < mColumnLinks.Num(); ++Gap)
+	{
+		mColumnLinks[Gap] = true;
+	}
+	if (HasAuthority())
+	{
+		// Saves made before links existed load fully linked; keep only the links the filters agree with.
+		if (MTSColumnLinks::RemoveInconsistentLinks(mColumnLinks, mColumnFilters))
+		{
+			UE_LOG(LogModularTruckStation, Log, TEXT("%s: unlinked columns with different filters (save version %d)"), *GetName(), mSaveVersion);
+		}
+		mSaveVersion = 2;
+	}
 	mPortDirections.SetNum(GetNumSlots());
 
 	// Directions are applied before the factory tick starts, so loaded belts on output ports keep working.
@@ -170,26 +187,40 @@ EMTSFilterChangeResult AMTSStationModule::SetColumnFilter(int32 Column, TSubclas
 		return EMTSFilterChangeResult::InvalidItem;
 	}
 
-	TArray<TSubclassOf<UFGItemDescriptor>> NewFilters = mColumnFilters;
-	NewFilters[Column] = ItemClass;
-	return ApplyColumnFilters(MoveTemp(NewFilters), OutFailedItem);
+	// One layout check for the whole group: setting its columns one by one could get stuck halfway.
+	return ApplyColumnFilters(MTSColumnLinks::WithGroupFilter(mColumnFilters, mColumnLinks, Column, ItemClass), OutFailedItem);
 }
 
-EMTSFilterChangeResult AMTSStationModule::SetAllColumnFilters(TSubclassOf<UFGItemDescriptor> ItemClass, TSubclassOf<UFGItemDescriptor>* OutFailedItem)
+bool AMTSStationModule::IsColumnLinked(int32 Gap) const
 {
-	if (ItemClass && !CanFilterItem(ItemClass))
+	return mColumnLinks.IsValidIndex(Gap) && mColumnLinks[Gap];
+}
+
+EMTSFilterChangeResult AMTSStationModule::SetColumnLink(int32 Gap, bool bLinked, TSubclassOf<UFGItemDescriptor>* OutFailedItem)
+{
+	if (!mColumnLinks.IsValidIndex(Gap))
 	{
-		return EMTSFilterChangeResult::InvalidItem;
+		return EMTSFilterChangeResult::InvalidColumn;
+	}
+	if (mColumnLinks[Gap] == bLinked)
+	{
+		return EMTSFilterChangeResult::Applied;
 	}
 
-	TArray<TSubclassOf<UFGItemDescriptor>> NewFilters;
-	NewFilters.Init(ItemClass, mNumColumns);
-	return ApplyColumnFilters(MoveTemp(NewFilters), OutFailedItem);
-}
-
-bool AMTSStationModule::HasUniformColumnFilters() const
-{
-	return !mColumnFilters.ContainsByPredicate([this](const TSubclassOf<UFGItemDescriptor>& Filter) { return Filter != mColumnFilters[0]; });
+	if (bLinked)
+	{
+		TArray<TSubclassOf<UFGItemDescriptor>> NewFilters = MTSColumnLinks::WithLinkedGap(mColumnFilters, mColumnLinks, Gap);
+		if (NewFilters != mColumnFilters)
+		{
+			const EMTSFilterChangeResult Result = ApplyColumnFilters(MoveTemp(NewFilters), OutFailedItem);
+			if (Result != EMTSFilterChangeResult::Applied)
+			{
+				return Result;
+			}
+		}
+	}
+	mColumnLinks[Gap] = bLinked;
+	return EMTSFilterChangeResult::Applied;
 }
 
 EMTSFilterChangeResult AMTSStationModule::ApplyColumnFilters(TArray<TSubclassOf<UFGItemDescriptor>> NewFilters, TSubclassOf<UFGItemDescriptor>* OutFailedItem)

@@ -13,10 +13,14 @@ class UPanelWidget;
 class UTexture2D;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMTSOnItemPicked, TSubclassOf<UFGItemDescriptor>, Item);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMTSOnPickerCancelled);
 
 /**
  * Searchable item picker. Shows the current item (icon, and its name as the search field's hint); typing lists the
- * matching items inline below the field, and clicking one (or Enter for the first) picks it.
+ * matching items below the field, and clicking one (or Enter for the first) picks it.
+ *
+ * Popup mode (mListAllWhenEmpty, mShowNoFilterEntry, mMaxResults 0): the list shows every item while the search is
+ * empty, with a "No filter" row first that picks null.
  *
  * The BP layout needs an EditableTextBox named "SearchBox" and a panel named "ResultList" (e.g. a Vertical Box in a
  * Scroll Box) that receives the result rows. Optional: an Image "CurrentIcon", and a widget "ResultArea" that is
@@ -43,12 +47,23 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Modular Station|UI")
 	TSubclassOf<UFGItemDescriptor> GetCurrentItem() const { return mCurrentItem; }
 
-	/** Broadcast when the player picks an item. */
+	/** Empties the search field (listing all items in popup mode) and optionally gives it keyboard focus, e.g. on open. */
+	UFUNCTION(BlueprintCallable, Category = "Modular Station|UI")
+	void ResetSearch(bool bFocus);
+
+	/** Broadcast when the player picks an item; null for the "No filter" row. */
 	UPROPERTY(BlueprintAssignable, Category = "Modular Station|UI")
 	FMTSOnItemPicked OnItemPicked;
 
+	/** Broadcast when the player presses Escape in the search field; a popup closes on it. */
+	UPROPERTY(BlueprintAssignable, Category = "Modular Station|UI")
+	FMTSOnPickerCancelled OnCancelled;
+
 	/** Called by a result row when it is clicked. */
 	void PickItem(TSubclassOf<UFGItemDescriptor> Item);
+
+	FORCEINLINE const FText& GetNoFilterText() const { return mNoFilterText; }
+	FORCEINLINE UTexture2D* GetUnsetIcon() const { return mUnsetIcon.Get(); }
 
 protected:
 	virtual void NativeOnInitialized() override;
@@ -58,15 +73,27 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI")
 	TSubclassOf<UMTSItemPickerEntry> mEntryClass;
 
-	/** Maximum number of result rows; keeps the list short while the search text is still vague. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI", meta = (ClampMin = 1))
+	/** Maximum number of item rows, 0 = no limit (for a scrolling list). Keeps an inline list short while the search is vague. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI", meta = (ClampMin = 0))
 	int32 mMaxResults = 40;
+
+	/** List every item while the search field is empty, instead of hiding the list. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI")
+	bool mListAllWhenEmpty = false;
+
+	/** Show a row that picks null ("No filter") first while the search field is empty. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI")
+	bool mShowNoFilterEntry = false;
+
+	/** Name of the null row. */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI")
+	FText mNoFilterText;
 
 	/** Hint of the search field while no item is set. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI")
 	FText mUnsetHintText;
 
-	/** Icon shown while no item is set; hidden if null. */
+	/** Icon shown while no item is set, and on the null row; hidden if null. */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Modular Station|UI")
 	TObjectPtr<UTexture2D> mUnsetIcon;
 
@@ -92,6 +119,9 @@ private:
 	/** Lists the items matching the search text, reusing result rows; hides the results if none match. */
 	void UpdateResults(const FString& SearchText);
 
+	/** Shows the next result row (created on demand) with Item. */
+	void AddResult(TSubclassOf<UFGItemDescriptor> Item);
+
 	/** Empties the search field and hides the results. */
 	void ClearSearch();
 
@@ -114,4 +144,7 @@ private:
 	TArray<TObjectPtr<UMTSItemPickerEntry>> mEntries;
 
 	int32 mNumResults = 0;
+
+	/** Index of the first item row in mEntries (1 when the null row is shown), for Enter. */
+	int32 mFirstItemResult = 0;
 };

@@ -15,6 +15,7 @@ UMTSItemPicker::UMTSItemPicker(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
 	mUnsetHintText = LOCTEXT("PickerUnsetHint", "Search item...");
+	mNoFilterText = LOCTEXT("PickerNoFilter", "No filter");
 }
 
 void UMTSItemPicker::NativeOnInitialized()
@@ -68,6 +69,15 @@ void UMTSItemPicker::PickItem(TSubclassOf<UFGItemDescriptor> Item)
 	SetCurrentItem(Item, true);
 }
 
+void UMTSItemPicker::ResetSearch(bool bFocus)
+{
+	ClearSearch();
+	if (bFocus && SearchBox)
+	{
+		SearchBox->SetKeyboardFocus();
+	}
+}
+
 void UMTSItemPicker::ClearSearch()
 {
 	if (SearchBox)
@@ -85,13 +95,15 @@ void UMTSItemPicker::HandleSearchTextChanged(const FText& Text)
 
 void UMTSItemPicker::HandleSearchTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)
 {
-	if (CommitMethod == ETextCommit::OnEnter && mNumResults > 0)
+	// Enter picks the first item, never the "No filter" row, so an empty search plus Enter clears nothing.
+	if (CommitMethod == ETextCommit::OnEnter && mNumResults > mFirstItemResult)
 	{
-		PickItem(mEntries[0]->GetItem());
+		PickItem(mEntries[mFirstItemResult]->GetItem());
 	}
 	else if (CommitMethod == ETextCommit::OnCleared)
 	{
 		ClearSearch();
+		OnCancelled.Broadcast();
 	}
 	// Focus loss keeps the results open: a click on a row takes the focus before the row receives the click.
 }
@@ -99,23 +111,24 @@ void UMTSItemPicker::HandleSearchTextCommitted(const FText& Text, ETextCommit::T
 void UMTSItemPicker::UpdateResults(const FString& SearchText)
 {
 	mNumResults = 0;
+	mFirstItemResult = 0;
+	const bool bEmptySearch = SearchText.TrimStartAndEnd().IsEmpty();
 	if (ResultList && mEntryClass)
 	{
-		for (int32 Index = 0; Index < mItems.Num() && mNumResults < mMaxResults; ++Index)
+		if (bEmptySearch && mShowNoFilterEntry)
 		{
-			if (!MTSItemSearch::Matches(mItemNames[Index], SearchText))
+			AddResult(nullptr);
+			mFirstItemResult = 1;
+		}
+		const bool bListAll = bEmptySearch && mListAllWhenEmpty;
+		int32 NumItems = 0;
+		for (int32 Index = 0; Index < mItems.Num() && (mMaxResults == 0 || NumItems < mMaxResults); ++Index)
+		{
+			if (bListAll || MTSItemSearch::Matches(mItemNames[Index], SearchText))
 			{
-				continue;
+				AddResult(mItems[Index]);
+				++NumItems;
 			}
-			if (mNumResults == mEntries.Num())
-			{
-				UMTSItemPickerEntry* NewEntry = CreateWidget<UMTSItemPickerEntry>(this, mEntryClass);
-				ResultList->AddChild(NewEntry);
-				mEntries.Add(NewEntry);
-			}
-			UMTSItemPickerEntry* Entry = mEntries[mNumResults++];
-			Entry->SetItem(this, mItems[Index]);
-			Entry->SetVisibility(ESlateVisibility::Visible);
 		}
 	}
 	else if (!SearchText.IsEmpty())
@@ -128,6 +141,19 @@ void UMTSItemPicker::UpdateResults(const FString& SearchText)
 		mEntries[Index]->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	SetResultsVisible(mNumResults > 0);
+}
+
+void UMTSItemPicker::AddResult(TSubclassOf<UFGItemDescriptor> Item)
+{
+	if (mNumResults == mEntries.Num())
+	{
+		UMTSItemPickerEntry* NewEntry = CreateWidget<UMTSItemPickerEntry>(this, mEntryClass);
+		ResultList->AddChild(NewEntry);
+		mEntries.Add(NewEntry);
+	}
+	UMTSItemPickerEntry* Entry = mEntries[mNumResults++];
+	Entry->SetItem(this, Item);
+	Entry->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UMTSItemPicker::SetResultsVisible(bool bVisible)

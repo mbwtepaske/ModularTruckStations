@@ -9,6 +9,7 @@ class AMTSStationModule;
 class UFGItemDescriptor;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FMTSOnFilterChangeResult, AMTSStationModule*, Module, int32, Column, EMTSFilterChangeResult, Result, TSubclassOf<UFGItemDescriptor>, FailedItem);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FMTSOnLinkChangeResult, AMTSStationModule*, Module, int32, Gap, EMTSFilterChangeResult, Result, TSubclassOf<UFGItemDescriptor>, FailedItem);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FMTSOnPortToggleResult, AMTSStationModule*, Module, int32, Slot, EMTSPortToggleResult, Result);
 
 /**
@@ -27,16 +28,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Modular Station", meta = (WorldContext = "WorldContext"))
 	static UMTSRemoteCallObject* GetLocal(const UObject* WorldContext);
 
-	/** Requests a column filter change; null unsets the column. The result arrives in OnFilterChangeResult. */
+	/**
+	 * Requests a filter for the column's linked group; null unsets it. Applies entirely or not at all. The result
+	 * arrives in OnFilterChangeResult.
+	 */
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Modular Station")
 	void Server_SetColumnFilter(AMTSStationModule* Module, int32 Column, TSubclassOf<UFGItemDescriptor> ItemClass);
 
-	/**
-	 * Requests the same filter for all columns (simple mode); null unsets them. Applies entirely or not at all. The
-	 * result arrives in OnFilterChangeResult with Column = -1.
-	 */
+	/** Requests linking or unlinking column Gap and Gap + 1. The result arrives in OnLinkChangeResult. */
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Modular Station")
-	void Server_SetAllColumnFilters(AMTSStationModule* Module, TSubclassOf<UFGItemDescriptor> ItemClass);
+	void Server_SetColumnLink(AMTSStationModule* Module, int32 Gap, bool bLinked);
 
 	/** Requests a port direction toggle. The result arrives in OnPortToggleResult. */
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Modular Station")
@@ -46,9 +47,13 @@ public:
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Modular Station")
 	void Server_SetPortDirection(AMTSStationModule* Module, int32 Slot, EMTSPortDirection Direction);
 
-	/** Broadcast on the requesting player's machine when the server answered a filter change; Column -1 = all columns. */
+	/** Broadcast on the requesting player's machine when the server answered a filter change. */
 	UPROPERTY(BlueprintAssignable, Category = "Modular Station")
 	FMTSOnFilterChangeResult OnFilterChangeResult;
+
+	/** Broadcast on the requesting player's machine when the server answered a link change. */
+	UPROPERTY(BlueprintAssignable, Category = "Modular Station")
+	FMTSOnLinkChangeResult OnLinkChangeResult;
 
 	/** Broadcast on the requesting player's machine when the server answered a port toggle. */
 	UPROPERTY(BlueprintAssignable, Category = "Modular Station")
@@ -57,6 +62,9 @@ public:
 private:
 	UFUNCTION(Client, Reliable)
 	void Client_FilterChangeResult(AMTSStationModule* Module, int32 Column, EMTSFilterChangeResult Result, TSubclassOf<UFGItemDescriptor> FailedItem);
+
+	UFUNCTION(Client, Reliable)
+	void Client_LinkChangeResult(AMTSStationModule* Module, int32 Gap, EMTSFilterChangeResult Result, TSubclassOf<UFGItemDescriptor> FailedItem);
 
 	UFUNCTION(Client, Reliable)
 	void Client_PortToggleResult(AMTSStationModule* Module, int32 Slot, EMTSPortToggleResult Result);

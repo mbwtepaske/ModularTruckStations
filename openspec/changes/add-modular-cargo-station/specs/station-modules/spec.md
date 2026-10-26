@@ -44,20 +44,36 @@ Each module column SHALL have a storage type filter that is either unset or one 
 - **WHEN** a player sets column 1 of a new module to Iron Plate
 - **THEN** column 1's filter is Iron Plate and its storage becomes active
 
-### Requirement: Simple and advanced filter editing
-The module UI SHALL offer a simple and an advanced mode for column filters. Both modes SHALL pick items from a searchable list of the items the module can store, plus a "none" entry. In simple mode the chosen item SHALL be applied to all columns in one change, entirely or not at all. In advanced mode each column's filter SHALL be chosen separately. Both modes SHALL follow the storage rules for filter changes. The UI SHALL open in simple mode; the player switches to advanced mode to edit columns separately. When the columns have different filters, simple mode SHALL show no current item and state that picking an item sets all columns.
+### Requirement: Column links and filter picking
+The module UI SHALL show all columns in one view: each column as the icon of its filter item (or the unset indicator), with a link toggle between each pair of neighbouring columns. Linked neighbours SHALL form a group that always has one filter. A newly built module SHALL have all columns linked.
 
-#### Scenario: Simple mode sets all columns
-- **WHEN** a player picks Iron Plate in simple mode on an M module
-- **THEN** both columns filter Iron Plate
+Clicking a column's icon SHALL open a picker overlay with a search field and a list of the items the module can store: all items while the search is empty, narrowed to matching items while the player types, with a "No filter" entry first. Picking an entry SHALL set the filter of the column's whole group in one change, entirely or not at all. Right-clicking a column's icon SHALL clear the filter of its group.
 
-#### Scenario: Simple mode is all or nothing
-- **WHEN** an M module's columns filter Iron Plate and Copper Sheet, the station holds Copper Sheet, and the player picks Iron Plate in simple mode
-- **THEN** the change is rejected and both filters stay unchanged
+Unlinking two columns SHALL always be allowed and SHALL keep both filters. Linking two groups SHALL give them one filter: the filter of the set group when the other is unset, otherwise the filter of the left group. A link SHALL be refused when the resulting filters break the storage rules. All filter changes SHALL follow the storage rules for filter changes.
 
-#### Scenario: Mixed filters are flagged in simple mode
-- **WHEN** a player opens the UI of a module whose columns have different filters
-- **THEN** the UI is in simple mode, shows no current item and a note that picking an item sets all columns, and advanced mode shows each column's filter
+#### Scenario: New module is fully linked
+- **WHEN** a player builds an XL module and picks Iron Plate on any column
+- **THEN** all link toggles are on and all four columns filter Iron Plate
+
+#### Scenario: Pick sets the linked group only
+- **WHEN** on an XL module columns 1-2 are linked, columns 3-4 are linked, the link between 2 and 3 is off, and the player picks Copper Sheet on column 3
+- **THEN** columns 3 and 4 filter Copper Sheet and columns 1 and 2 keep their filter
+
+#### Scenario: Group change is all or nothing
+- **WHEN** both linked columns of an M module filter Copper Sheet, the station holds Copper Sheet, and the player picks Iron Plate on one of them
+- **THEN** the change is rejected and both columns keep Copper Sheet
+
+#### Scenario: Linking adopts the set filter
+- **WHEN** column 1 filters Iron Plate, column 2 is unset, the link between them is off, and the player turns it on
+- **THEN** both columns filter Iron Plate and are linked
+
+#### Scenario: Link refused when stock would not fit
+- **WHEN** column 1 filters Iron Plate, column 2 filters Copper Sheet, the station holds Copper Sheet, and the player links them
+- **THEN** the link stays off, both filters stay unchanged and the UI shows why
+
+#### Scenario: Right-click clears the group
+- **WHEN** a player right-clicks the icon of a column in a linked group whose item is not stored
+- **THEN** every column of the group becomes unset
 
 ### Requirement: Column filter display
 Each module column SHALL have a display on top that shows the icon of the column's filter item, or an "unset" indicator when no filter is set. Displays SHALL update for all players when the filter changes.
@@ -82,7 +98,7 @@ Dismantling a module SHALL leave the base in place without a module. The player 
 - **THEN** a new module of any size can be placed on that base
 
 ### Requirement: Module settings replicate and persist
-Column filters and port directions SHALL be saved with the game and SHALL be identical for all players in multiplayer. Changes made by a client SHALL be validated by the host before they take effect.
+Column filters, column links and port directions SHALL be saved with the game and SHALL be identical for all players in multiplayer. Changes made by a client SHALL be validated by the host before they take effect.
 
 #### Scenario: Client changes filter
 - **WHEN** a client sets a column filter that the storage rules allow

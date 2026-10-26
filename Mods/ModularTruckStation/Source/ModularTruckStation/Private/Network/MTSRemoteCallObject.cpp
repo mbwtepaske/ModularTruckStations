@@ -38,16 +38,16 @@ void UMTSRemoteCallObject::Server_SetColumnFilter_Implementation(AMTSStationModu
 	Client_FilterChangeResult(Module, Column, Result, FailedItem);
 }
 
-void UMTSRemoteCallObject::Server_SetAllColumnFilters_Implementation(AMTSStationModule* Module, TSubclassOf<UFGItemDescriptor> ItemClass)
+void UMTSRemoteCallObject::Server_SetColumnLink_Implementation(AMTSStationModule* Module, int32 Gap, bool bLinked)
 {
 	EMTSFilterChangeResult Result = EMTSFilterChangeResult::NotInReach;
 	TSubclassOf<UFGItemDescriptor> FailedItem;
 	if (IsInReach(Module))
 	{
-		Result = Module->SetAllColumnFilters(ItemClass, &FailedItem);
+		Result = Module->SetColumnLink(Gap, bLinked, &FailedItem);
 	}
-	UE_LOG(LogModularTruckStation, Log, TEXT("%s all filters -> %s: %s"), *GetNameSafe(Module), *GetNameSafe(ItemClass), *UEnum::GetValueAsString(Result));
-	Client_FilterChangeResult(Module, INDEX_NONE, Result, FailedItem);
+	UE_LOG(LogModularTruckStation, Log, TEXT("%s link %d -> %s: %s"), *GetNameSafe(Module), Gap, bLinked ? TEXT("on") : TEXT("off"), *UEnum::GetValueAsString(Result));
+	Client_LinkChangeResult(Module, Gap, Result, FailedItem);
 }
 
 void UMTSRemoteCallObject::Server_TogglePort_Implementation(AMTSStationModule* Module, int32 Slot)
@@ -67,6 +67,11 @@ void UMTSRemoteCallObject::Server_SetPortDirection_Implementation(AMTSStationMod
 void UMTSRemoteCallObject::Client_FilterChangeResult_Implementation(AMTSStationModule* Module, int32 Column, EMTSFilterChangeResult Result, TSubclassOf<UFGItemDescriptor> FailedItem)
 {
 	OnFilterChangeResult.Broadcast(Module, Column, Result, FailedItem);
+}
+
+void UMTSRemoteCallObject::Client_LinkChangeResult_Implementation(AMTSStationModule* Module, int32 Gap, EMTSFilterChangeResult Result, TSubclassOf<UFGItemDescriptor> FailedItem)
+{
+	OnLinkChangeResult.Broadcast(Module, Gap, Result, FailedItem);
 }
 
 void UMTSRemoteCallObject::Client_PortToggleResult_Implementation(AMTSStationModule* Module, int32 Slot, EMTSPortToggleResult Result)

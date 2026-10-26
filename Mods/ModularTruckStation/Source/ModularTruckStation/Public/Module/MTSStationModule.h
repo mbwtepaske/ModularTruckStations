@@ -83,21 +83,23 @@ public:
 	/** Sets the base this module is built on. Called by the hologram before BeginPlay; the module registers itself there. */
 	void SetStationBase(AMTSStationBase* StationBase);
 
+	/** @return true if the gap between column Gap and Gap + 1 is linked; linked columns always share one filter. */
+	UFUNCTION(BlueprintPure, Category = "Modular Station")
+	bool IsColumnLinked(int32 Gap) const;
+
 	/**
-	 * Server only. Sets a column's filter (null = unset) if the base's stock still fits the resulting pools.
+	 * Server only. Sets the filter (null = unset) of the column's whole linked group, if the base's stock still fits
+	 * the resulting pools; the change applies entirely or not at all.
 	 * @param OutFailedItem	the item type that blocked the change, if any.
 	 */
 	EMTSFilterChangeResult SetColumnFilter(int32 Column, TSubclassOf<UFGItemDescriptor> ItemClass, TSubclassOf<UFGItemDescriptor>* OutFailedItem = nullptr);
 
 	/**
-	 * Server only. Sets every column to the same filter (null = unset) in one layout check, so the change applies
-	 * entirely or not at all.
+	 * Server only. Links or unlinks column Gap and Gap + 1. Unlinking keeps both filters and always applies. Linking
+	 * gives both groups one filter (the left group's, or the right group's when the left one is unset) and is
+	 * rejected, keeping the link off, when the stock would not fit.
 	 */
-	EMTSFilterChangeResult SetAllColumnFilters(TSubclassOf<UFGItemDescriptor> ItemClass, TSubclassOf<UFGItemDescriptor>* OutFailedItem = nullptr);
-
-	/** @return true if all columns have the same filter (or none); the UI then opens in simple mode. */
-	UFUNCTION(BlueprintPure, Category = "Modular Station")
-	bool HasUniformColumnFilters() const;
+	EMTSFilterChangeResult SetColumnLink(int32 Gap, bool bLinked, TSubclassOf<UFGItemDescriptor>* OutFailedItem = nullptr);
 
 	/** Server only. Switches a slot port between input and output, if no belt is connected to it. */
 	EMTSPortToggleResult TogglePortDirection(int32 Slot);
@@ -147,6 +149,10 @@ protected:
 	UPROPERTY(SaveGame, ReplicatedUsing = OnRep_ColumnFilters)
 	TArray<TSubclassOf<UFGItemDescriptor>> mColumnFilters;
 
+	/** Link per gap between neighbouring columns (index = left column); new modules start fully linked. */
+	UPROPERTY(SaveGame, Replicated)
+	TArray<bool> mColumnLinks;
+
 	/** Port direction per slot, index = column * NumRows + row. Saved here because connection directions are not saved. */
 	UPROPERTY(SaveGame, ReplicatedUsing = OnRep_PortDirections)
 	TArray<EMTSPortDirection> mPortDirections;
@@ -154,9 +160,9 @@ protected:
 	UPROPERTY(SaveGame, Replicated)
 	TObjectPtr<AMTSStationBase> mStationBase;
 
-	/** Save data version of this class, for later migrations. */
+	/** Save data version of this class, for later migrations. 2: column links. */
 	UPROPERTY(SaveGame)
-	int32 mSaveVersion = 1;
+	int32 mSaveVersion = 2;
 
 	/** Material of the column displays, set on each "Display_<column>" component at runtime. */
 	UPROPERTY(EditDefaultsOnly, Category = "Modular Station|Display")
