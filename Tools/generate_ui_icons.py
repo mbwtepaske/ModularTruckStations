@@ -9,12 +9,17 @@ The port button is two layers: T_MTS_PortFrame (background) and T_MTS_PortArrows
 outline: frame pixels 52..204 x 44..192, i.e. 59.4% x 57.8% of the frame), so the widget shows one cell by
 clipping the atlas to that window and slides the atlas to change state.
 
+The column link toggle is layered too, with white textures that the widget tints: T_MTS_LinkRing (one chain link,
+used for the left and right link), T_MTS_LinkRingFront (the top of the left link's right end, drawn over the right
+link so the two read as interlocked) and T_MTS_LinkRipple (click feedback). The widget moves the links apart with a
+render translation; see the LINK_* values for the layout.
+
 Shapes are drawn at SUPERSAMPLE times the final size and scaled down for smooth edges.
 """
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 
 SIZE = 256
 SUPERSAMPLE = 4
@@ -47,6 +52,22 @@ ATLAS_CELLS = {
 CELL_LABELS = {(0, 0): "Input", (1, 0): "Output", (0, 1): "Input, locked", (1, 1): "Output, locked"}
 
 PREVIEW_BACKGROUND = (30, 30, 34, 255)
+
+# Column link layout, in widget pixels. The link images are LINK_IMAGE in size, placed centred in a LINK_WIDGET
+# canvas and moved horizontally by +/-(LINK_OFFSET + phase x LINK_SEPARATION), phase 0 = linked, 1 = unlinked.
+# Textures are LINK_TEXTURE_SCALE times the widget size so they stay sharp at higher UI scales.
+LINK_WIDGET = (64, 36)
+LINK_IMAGE = (32, 20)
+LINK_OFFSET = 7.5
+LINK_SEPARATION = 8.0
+LINK_TEXTURE_SCALE = 4
+LINK_STROKE = 4  # widget pixels
+LINK_LINKED = ACCENT
+LINK_UNLINKED = (120, 124, 132, 255)
+LINK_HOVER_WHITE = 0.35  # how far hover tints towards white
+LINK_HOVER_NUDGE = 0.18  # how far hover moves towards the other state
+LINK_GAP = (22, 23, 26, 255)  # dark edge of the front piece where the links cross
+WHITE = (255, 255, 255, 255)
 
 
 def canvas(width=SIZE, height=SIZE):
@@ -93,6 +114,46 @@ def port_arrows():
     for (column, row), (direction, color) in ATLAS_CELLS.items():
         draw_chevrons(draw, (column * SIZE, row * SIZE), direction, color)
     save(image, "T_MTS_PortArrows.png", (2 * SIZE, 2 * SIZE))
+
+
+def link_ring_image():
+    """One white chain link filling a LINK_IMAGE canvas (at texture resolution, supersampled)."""
+    width, height = (v * LINK_TEXTURE_SCALE for v in LINK_IMAGE)
+    stroke = LINK_STROKE * LINK_TEXTURE_SCALE
+    image, draw = canvas(width, height)
+    margin_x, margin_y = LINK_TEXTURE_SCALE, 2 * LINK_TEXTURE_SCALE
+    box = (margin_x, margin_y, width - margin_x, height - margin_y)
+    draw.rounded_rectangle(scaled(box), radius=(box[3] - box[1]) / 2 * SUPERSAMPLE, outline=WHITE, width=stroke * SUPERSAMPLE)
+    return image
+
+
+def link_textures():
+    """T_MTS_LinkRing, T_MTS_LinkRingFront (top-right quarter of the same canvas) and T_MTS_LinkRipple."""
+    size = tuple(v * LINK_TEXTURE_SCALE for v in LINK_IMAGE)
+    ring = link_ring_image()
+    save(ring, "T_MTS_LinkRing.png", size)
+
+    # Front piece: the top-right quarter of the link, with a dark edge along the stroke so the crossing with the
+    # right link shows as a gap. The edge stays dark after tinting, because the widget's tint multiplies.
+    quarter = (ring.width // 2, 0, ring.width, ring.height // 2)
+    edge_width = LINK_TEXTURE_SCALE * SUPERSAMPLE  # 1 widget pixel
+    grown = ring.getchannel("A").filter(ImageFilter.MaxFilter(2 * edge_width + 1))
+    edge = ImageChops.subtract(grown, ring.getchannel("A"))
+    front = Image.new("RGBA", ring.size, (0, 0, 0, 0))
+    front_edge = Image.new("RGBA", ring.size, LINK_GAP[:3] + (0,))
+    front_edge.putalpha(edge)
+    front.alpha_composite(front_edge)
+    front.alpha_composite(ring)
+    cut = Image.new("RGBA", ring.size, (0, 0, 0, 0))
+    cut.paste(front.crop(quarter), quarter[:2])
+    save(cut, "T_MTS_LinkRingFront.png", size)
+
+    # Thin oval the size of the whole link widget; the widget scales it up and fades it out on a click.
+    width, height = (v * LINK_TEXTURE_SCALE for v in LINK_WIDGET)
+    ripple, draw = canvas(width, height)
+    inset = 2 * LINK_TEXTURE_SCALE
+    draw.ellipse(scaled((inset, inset, width - inset, height - inset)), outline=WHITE, width=round(1.5 * LINK_TEXTURE_SCALE) * SUPERSAMPLE)
+    save(ripple, "T_MTS_LinkRipple.png", (width, height))
 
 
 def port_frame():
@@ -173,7 +234,83 @@ def preview():
     print(f"wrote {path}")
 
 
+def tinted(image, color):
+    """Texture tinted like a UMG image's Color and Opacity: every channel multiplied by the color."""
+    return ImageChops.multiply(image, Image.new("RGBA", image.size, color))
+
+
+def mix(a, b, t):
+    return tuple(round(x + (y - x) * t) for x, y in zip(a, b))
+
+
+def link_widget(ring, front, phase, hover=0.0, scale=1.0):
+    """The link widget as UMG draws it, at texture resolution: left ring, right ring, left front piece."""
+    k = LINK_TEXTURE_SCALE
+    width, height = LINK_WIDGET[0] * k, LINK_WIDGET[1] * k
+    result = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    color = mix(mix(LINK_LINKED, LINK_UNLINKED, ease(phase)), WHITE, hover * LINK_HOVER_WHITE)
+    shift = (LINK_OFFSET + phase * LINK_SEPARATION) * k
+    x = (width - ring.width) / 2
+    y = (height - ring.height) // 2
+    for image, dx in ((ring, -shift), (ring, shift), (front, -shift)):
+        result.alpha_composite(tinted(image, color), (round(x + dx), y))
+    if scale != 1.0:
+        scaled_image = result.resize((round(width * scale), round(height * scale)), Image.LANCZOS)
+        result = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        result.alpha_composite(scaled_image, ((width - scaled_image.width) // 2, (height - scaled_image.height) // 2))
+    return result
+
+
+def link_preview():
+    """Link states built from the layer textures, as the widget will; for checking only, not imported."""
+    ring = Image.open(OUTPUT_DIR / "T_MTS_LinkRing.png").convert("RGBA")
+    front = Image.open(OUTPUT_DIR / "T_MTS_LinkRingFront.png").convert("RGBA")
+    ripple = Image.open(OUTPUT_DIR / "T_MTS_LinkRipple.png").convert("RGBA")
+    font = ImageFont.truetype("segoeui.ttf", 15)
+    states = [("Linked", 0.0, 0.0), ("Hover (linked)", LINK_HOVER_NUDGE, 1.0), ("Halfway", 0.5, 0.0),
+              ("Hover (unlinked)", 1 - LINK_HOVER_NUDGE, 1.0), ("Unlinked", 1.0, 0.0)]
+    tile_w, tile_h = 300, 230
+    sheet = Image.new("RGBA", (tile_w * len(states), tile_h), PREVIEW_BACKGROUND)
+    draw = ImageDraw.Draw(sheet)
+    for index, (label, phase, hover) in enumerate(states):
+        big = link_widget(ring, front, phase, hover)
+        sheet.alpha_composite(big, (index * tile_w + (tile_w - big.width) // 2, 14))
+        # Actual widget size, on a plate in the colour of the module window background.
+        small = big.resize(LINK_WIDGET, Image.LANCZOS)
+        plate = Image.new("RGBA", (small.width + 12, small.height + 12), (38, 39, 44, 255))
+        plate.alpha_composite(small, (6, 6))
+        sheet.alpha_composite(plate, (index * tile_w + (tile_w - plate.width) // 2, 14 + big.height + 10))
+        draw.text((index * tile_w + tile_w // 2, tile_h - 14), label, font=font, fill=(205, 205, 210), anchor="mm")
+    path = OUTPUT_DIR.parent / "Preview_Link_States.png"
+    sheet.save(path)
+    print(f"wrote {path}")
+
+    # Click on the linked toggle: press, ripple, slide apart; then the same back.
+    frames, durations = [], []
+    for start in (0.0, 1.0):
+        for step in range(30):
+            since = step / 30
+            scale = 1 - 0.12 * ease(since / 0.1) if since < 0.1 else 0.88 + 0.12 * ease((since - 0.1) / 0.12) if since < 0.22 else 1.0
+            progress = max(0.0, min(1.0, (since - 0.12) / 0.5))
+            phase = start + (1 - 2 * start) * progress
+            image = Image.new("RGBA", (LINK_WIDGET[0] * LINK_TEXTURE_SCALE + 40, LINK_WIDGET[1] * LINK_TEXTURE_SCALE + 40), PREVIEW_BACKGROUND)
+            image.alpha_composite(link_widget(ring, front, phase, 1.0, scale), (20, 20))
+            if since < 0.45:
+                grow = 0.7 + 0.6 * since / 0.45
+                ring_image = tinted(ripple, mix(LINK_LINKED, LINK_UNLINKED, ease(phase))[:3] + (round(200 * (1 - since / 0.45)),))
+                ring_image = ring_image.resize((round(ring_image.width * grow), round(ring_image.height * grow)), Image.LANCZOS)
+                image.alpha_composite(ring_image, ((image.width - ring_image.width) // 2, (image.height - ring_image.height) // 2))
+            frames.append(image.convert("RGB"))
+            durations.append(33)
+        durations[-1] = 700
+    path = OUTPUT_DIR.parent / "Preview_Link_Click.gif"
+    frames[0].save(path, save_all=True, append_images=frames[1:], duration=durations, loop=0)
+    print(f"wrote {path}")
+
+
 if __name__ == "__main__":
     port_arrows()
     port_frame()
+    link_textures()
     preview()
+    link_preview()
