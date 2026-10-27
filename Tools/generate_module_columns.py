@@ -335,9 +335,8 @@ def generate_schematic(template, recipes):
         set_property(defaults, "mMenuPriority", float(config["menu_priority"]))
         set_property(defaults, "mTimeToComplete", float(config["time_to_complete"]))
         set_property(defaults, "mCost", item_amounts(config["cost"]))
-        brush = unreal.SlateBrush()
-        brush.set_editor_property("resource_object", load_asset(config["icon"]))
-        brush.set_editor_property("image_size", unreal.Vector2D(256.0, 256.0))
+        # FSlateBrush::ImageSize is an FDeprecateSlateVector2D, which Python cannot assign; UMG's helper sets it.
+        brush = unreal.WidgetBlueprintLibrary.make_brush_from_texture(load_asset(config["icon"]), 256, 256)
         set_property(defaults, "mSchematicIcon", brush)
 
         # Instanced subobjects of the class defaults, rebuilt on every run.
