@@ -1,0 +1,143 @@
+# Cargo module definitions: column template, module sizes, descriptors, recipes and the unlock schematic.
+#
+# Tools/generate_module_columns.py applies this file in the editor. Per module it creates (from the parent class,
+# if missing) or updates the module BP, its building descriptor and its recipe; then the schematic that unlocks them.
+# Module BPs: the components the script generated before (and those under remove_names) are rebuilt from parts;
+# components it does not generate (root, attach points, ...) are left alone. Settings not listed here stay as they are.
+# Run it in the editor (Tools > Execute Python Script) after changing this file, then compile check and Alpakit.
+# Needs PyYAML in the engine's Python, see README.md ("Editor tools").
+#
+# Names must stay as the module code expects: "Port_<column>_<row>" for the conveyor connections (row 0 = bottom)
+# and "Display_<column>" for the display placeholders. {c} is the column index, {r} the row index.
+# Locations are in cm, rotations in degrees [pitch, yaw, roll], relative to the parent.
+# A child inherits its parent's scale, so only scale parts that have no children (e.g. the body).
+# Write small numbers with a dot (0.00001): PyYAML reads 1e-05 as text.
+#
+# Values for class defaults (shared) are written as the editor property name (C++ name) and a value. Strings use
+# a prefix to say what they are: "class:" a class path (..._C for blueprints), "asset:" an asset path, "softclass:" a
+# soft class reference, "text:" display text. Numbers, booleans and lists are taken as they are.
+
+layout:
+  rows: 2
+  # Columns are placed along +Y: column c is centred at first_column + c * spacing. Only the top-level parts get this
+  # offset; children are placed relative to their parent.
+  axis: [0.0, 1.0, 0.0]
+  first_column: 200.0
+  spacing: 400.0
+  # Components from before this template that the generated parts replace.
+  remove_names: [Body]
+
+# Component tree of one column, created parent first. A part with per_row: true is created once per row (with
+# location taken from row_locations), and so are all its children; {r} can only be used inside such a part.
+parts:
+  - name: Column_{c}
+    class: SceneComponent   # unscaled pivot of the column; receives the column offset
+    children:
+      - name: Body_{c}
+        class: StaticMeshComponent
+        mesh: /Engine/BasicShapes/Cube.Cube
+        location: [0.0, 0.0, 350.0]
+        scale: [5.0, 4.0, 6.0]
+
+      - name: Port_{c}_{r}_Mesh
+        class: StaticMeshComponent
+        mesh: /Game/FactoryGame/Buildable/Factory/FactoryInputs/Mesh/SM_Input_01.SM_Input_01
+        rotation: [0.0, 270.0, 0.0]
+        per_row: true
+        row_locations:
+          - [320.0, 0.0, 0.0]
+          - [320.0, 0.0, 200.0]
+        children:
+          - name: Port_{c}_{r}
+            class: FGFactoryConnectionComponent
+            location: [0.0, -120.0, 100.0]
+            rotation: [0.0, 90.0, 0.0]
+
+      - name: Display_{c}
+        class: StaticMeshComponent
+        mesh: /Engine/BasicShapes/Cube.Cube
+        location: [250.5, 0.0, 540.0]
+        scale: [0.00001, 1.5, 1.5]
+        # Only marks the place; the module replaces it at runtime, and the body behind it takes the interaction traces.
+        collision_profile: NoCollision
+
+# Settings every module BP, descriptor and recipe shares. parent_class is used when the asset is created.
+shared:
+  module:
+    parent_class: /Script/ModularTruckStation.MTSCargoModule
+    mHologramClass: "class:/Script/ModularTruckStation.MTSStationModuleHologram"
+    mDisplayMaterial: "asset:/ModularTruckStation/Materials/M_MTSColumnDisplay.M_MTSColumnDisplay"
+    mUnsetDisplayIcon: "asset:/Game/FactoryGame/Buildable/Factory/Train/Signal/UI/TXUI_TrainSignal_PathError.TXUI_TrainSignal_PathError"
+    mInteractWidgetSoftClass: "softclass:/ModularTruckStation/Content/UI/Widget_MTSModule.Widget_MTSModule_C"
+    mIsUseable: true
+
+  descriptor:
+    parent_class: /Script/FactoryGame.FGBuildingDescriptor
+    mSmallIcon: "asset:/Game/FactoryGame/Buildable/Factory/TruckStation/UI/IconDesc_TruckStation_256.IconDesc_TruckStation_256"
+    mPersistentBigIcon: "asset:/Game/FactoryGame/Buildable/Factory/TruckStation/UI/IconDesc_TruckStation_512.IconDesc_TruckStation_512"
+    mCategory: "class:/Game/FactoryGame/Interface/UI/InGame/BuildMenu/BuildCategories/BC_Vehicles.BC_Vehicles_C"
+    mSubCategories:
+      - "class:/Game/FactoryGame/Interface/UI/InGame/BuildMenu/BuildCategories/Sub_Transport/SC_Vehicles.SC_Vehicles_C"
+    mQuickSwitchGroup: "class:/Game/FactoryGame/Interface/UI/InGame/BuildMenu/QuickSwapGroups/SwapGroup_3.SwapGroup_3_C"
+
+  recipe:
+    parent_class: /Script/FactoryGame.FGRecipe
+    mProducedIn:
+      - "softclass:/Game/FactoryGame/Equipment/BuildGun/BP_BuildGun.BP_BuildGun_C"
+
+# Placeholder cost until the balance pass: [item descriptor class, amount] pairs. Reused below with *placeholder_cost.
+placeholder_cost: &placeholder_cost
+  - [/Game/FactoryGame/Resource/Parts/IronPlate/Desc_IronPlate.Desc_IronPlate_C, 1]
+
+# One entry per module. Optional: small_icon / big_icon (texture paths) to replace the shared descriptor icons.
+modules:
+  - blueprint: /ModularTruckStation/Buildable/CargoModule/Build_MTSCargoModule_S01
+    descriptor: /ModularTruckStation/Buildable/CargoModule/Desc_MTSCargoModule_S01
+    recipe: /ModularTruckStation/Recipes/Recipe_MTSCargoModule_S01
+    columns: 1
+    display_name: Cargo Module S01
+    description: "Storage module for a modular cargo station: 1 column of 2 belt ports."
+    menu_priority: 1.0
+    ingredients: *placeholder_cost
+
+  - blueprint: /ModularTruckStation/Buildable/CargoModule/Build_MTSCargoModule_S02
+    descriptor: /ModularTruckStation/Buildable/CargoModule/Desc_MTSCargoModule_S02
+    recipe: /ModularTruckStation/Recipes/Recipe_MTSCargoModule_S02
+    columns: 2
+    display_name: Cargo Module S02
+    description: "Storage module for a modular cargo station: 2 columns of 2 belt ports."
+    menu_priority: 2.0
+    ingredients: *placeholder_cost
+
+  - blueprint: /ModularTruckStation/Buildable/CargoModule/Build_MTSCargoModule_S03
+    descriptor: /ModularTruckStation/Buildable/CargoModule/Desc_MTSCargoModule_S03
+    recipe: /ModularTruckStation/Recipes/Recipe_MTSCargoModule_S03
+    columns: 4
+    display_name: Cargo Module S03
+    description: "Storage module for a modular cargo station: 4 columns of 2 belt ports."
+    menu_priority: 3.0
+    ingredients: *placeholder_cost
+
+# The milestone that unlocks the base and all modules. It unlocks every module recipe above plus extra_recipes, and
+# becomes available once a required schematic is purchased (Schematic_3-3, Vehicular Transport, unlocks the vanilla
+# truck station). It is added to register_in's schematics; schematics under replaces are removed from that list.
+schematic:
+  path: /ModularTruckStation/Schematics/Schematic_MTSModularStations
+  parent_class: /Script/FactoryGame.FGSchematic
+  type: EST_Milestone
+  display_name: Modular Truck Stations
+  category: /Game/FactoryGame/Schematics/SchematicCategories/SC_Logistics.SC_Logistics_C
+  tech_tier: 3
+  menu_priority: 10.0
+  time_to_complete: 60.0
+  icon: /Game/FactoryGame/Buildable/Factory/TradingPost/UI/SchematicIcons/TXUI_SIcon_Logistics.TXUI_SIcon_Logistics
+  cost: *placeholder_cost
+  requires:
+    - /Game/FactoryGame/Schematics/Progression/Schematic_3-3.Schematic_3-3_C
+  extra_recipes:
+    - /ModularTruckStation/Recipes/Recipe_MTSCargoStationBase.Recipe_MTSCargoStationBase_C
+  unlock_class: /Game/FactoryGame/Unlocks/BP_UnlockRecipe.BP_UnlockRecipe_C
+  dependency_class: /Script/FactoryGame.FGSchematicPurchasedDependency
+  register_in: /ModularTruckStation/RootGameWorld_ModularTruckStation
+  replaces:
+    - /ModularTruckStation/Schematics/Schematic_MTSSpike.Schematic_MTSSpike_C

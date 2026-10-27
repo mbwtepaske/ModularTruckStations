@@ -84,6 +84,23 @@ Keep the engine and the starter project near the drive root and out of cloud-syn
 10. **Package and test.** In Alpakit Dev, package `ModularTruckStation`, start the game and check the mod is listed in
     the SML mods menu.
 
+## Editor tools
+
+`Tools/generate_module_columns.py` builds the cargo module blueprints, descriptors, recipes and the unlock schematic
+from `Tools/module_columns.yaml`. It runs in the editor's own Python (3.11, separate from any Python installed on the
+machine) and needs PyYAML there. Install it once per engine install, with the editor closed:
+
+```
+"D:\Projects\Games\Satisfactory\UnrealEngine-CSS\Engine\Binaries\ThirdParty\Python3\Win64\python.exe" -m pip install pyyaml
+```
+
+Reinstalling or moving the engine removes it; run the command again. Then, after changing the YAML file, run the
+script in the editor (Tools > Execute Python Script) or headless with the editor closed:
+
+```
+"%E%\Binaries\Win64\UnrealEditor-Cmd.exe" "%P%" -run=pythonscript -script="D:\Projects\Games\Satisfactory\ModularTruckStation\Tools\generate_module_columns.py"
+```
+
 ## Repo setup
 
 - Git with Git LFS for Unreal and art assets (see `.gitattributes`). Run `git lfs install` once per machine.
